@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from playwright.sync_api import sync_playwright
 
@@ -28,6 +29,10 @@ def send_photo(photo_path: str, caption: str):
     with open(photo_path, "rb") as f:
         requests.post(url, data={"chat_id": CHAT_ID, "caption": caption}, files={"photo": f}, timeout=30)
 
+def normalize_text(text: str) -> str:
+    """Collapses multiple spaces, tabs, and newlines into single spaces."""
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
 def execute_check():
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -42,7 +47,7 @@ def execute_check():
         try:
             print(f"1. Loading {PORTAL_URL}...")
             page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(3000)
 
             print("2. Filling input fields...")
             reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
@@ -54,36 +59,40 @@ def execute_check():
             email_input.scroll_into_view_if_needed()
             email_input.fill(EMAIL)
 
-            print("3. Clicking tracking submit button...")
-            # Added .first to satisfy strict mode
+            print("3. Submitting form...")
             submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
             submit_btn.scroll_into_view_if_needed()
             submit_btn.click()
             
-            # Backup: also trigger submit via Enter key
             email_input.press("Enter")
 
-            print("4. Waiting for results to load...")
-            page.wait_for_timeout(9000)
+            print("4. Waiting for results to render...")
+            page.wait_for_timeout(10000)
 
-            # Capture snapshot
             page.screenshot(path=SCREENSHOT_FILE, full_page=True)
 
-            body = page.locator("body").inner_text()
+            raw_body = page.locator("body").inner_text()
+            norm_body = normalize_text(raw_body)
 
-            # Status detection
+            # Debug output in Actions console
+            print("--- EXTRACTED PAGE TEXT SAMPLE ---")
+            print(norm_body[:800])
+            print("----------------------------------")
+
             current_status = None
-            if "Consideration of application" in body or "Рассмотрение заявки" in body or "Рассмотрение заявления" in body:
+
+            # Flexible regex matching across normalized Russian and English labels
+            if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
                 current_status = "Stage 2: Consideration of application"
-            elif "Distribution" in body or "Распределение" in body:
+            elif re.search(r'(distribution|распределени)', norm_body):
                 current_status = "Stage 3: Distribution"
-            elif "Verification" in body or "Проверка" in body:
+            elif re.search(r'(verification|проверк)', norm_body):
                 current_status = "Stage 4: Verification"
-            elif "Entering the questionnaire" in body or "Заполнение анкеты" in body:
+            elif re.search(r'(questionnaire|анкет|заполнение|черновик)', norm_body):
                 current_status = "Stage 1: Entering the questionnaire"
 
             if current_status:
-                print(f"Status Found: {current_status}")
+                print(f"Status Matched: {current_status}")
                 old_status = ""
                 if os.path.exists(STATE_FILE):
                     with open(STATE_FILE, "r", encoding="utf-8") as f:
@@ -102,11 +111,11 @@ def execute_check():
                     )
                     send_alert(msg)
                     send_photo(SCREENSHOT_FILE, f"Current Status: {current_status}")
-                    print("Telegram notification delivered.")
+                    print("Telegram alert delivered.")
                 else:
-                    print("Status unchanged.")
+                    print(f"Status unchanged ({current_status}). Skipping notification.")
             else:
-                print("Stage name not recognized in text. Sending snapshot...")
+                print("Stage name not recognized in normalized text. Sending snapshot...")
                 send_photo(SCREENSHOT_FILE, "⚠️ Result loaded after submission. Check snapshot.")
 
         finally:
