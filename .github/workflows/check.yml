@@ -2,7 +2,7 @@ name: Minobrnauki Status Tracker (3-Hour Interval)
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '23 */3 * * *'
   workflow_dispatch:
 
 permissions:
