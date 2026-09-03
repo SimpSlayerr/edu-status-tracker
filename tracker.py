@@ -49,36 +49,38 @@ def execute_check():
             email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
 
             reg_input.scroll_into_view_if_needed()
-            reg_input.click()
             reg_input.fill(REG_NUMBER)
 
-            email_input.click()
+            email_input.scroll_into_view_if_needed()
             email_input.fill(EMAIL)
 
             print("3. Clicking tracking submit button...")
-            # Target specifically the button directly below the email input
-            submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button[1]")
+            # Added .first to satisfy strict mode
+            submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
             submit_btn.scroll_into_view_if_needed()
             submit_btn.click()
+            
+            # Backup: also trigger submit via Enter key
+            email_input.press("Enter")
 
             print("4. Waiting for results to load...")
-            page.wait_for_timeout(8000)
+            page.wait_for_timeout(9000)
 
-            # Capture page snapshot
+            # Capture snapshot
             page.screenshot(path=SCREENSHOT_FILE, full_page=True)
 
             body = page.locator("body").inner_text()
 
-            # Identify current stage
+            # Status detection
             current_status = None
             if "Consideration of application" in body or "Рассмотрение заявки" in body or "Рассмотрение заявления" in body:
-                current_status = "Stage 2: Consideration of application (Рассмотрение)"
+                current_status = "Stage 2: Consideration of application"
             elif "Distribution" in body or "Распределение" in body:
-                current_status = "Stage 3: Distribution (Распределение)"
+                current_status = "Stage 3: Distribution"
             elif "Verification" in body or "Проверка" in body:
-                current_status = "Stage 4: Verification (Проверка)"
+                current_status = "Stage 4: Verification"
             elif "Entering the questionnaire" in body or "Заполнение анкеты" in body:
-                current_status = "Stage 1: Entering the questionnaire (Заполнение анкеты)"
+                current_status = "Stage 1: Entering the questionnaire"
 
             if current_status:
                 print(f"Status Found: {current_status}")
@@ -99,13 +101,13 @@ def execute_check():
                         f"🔗 [Open Portal]({PORTAL_URL})"
                     )
                     send_alert(msg)
-                    send_photo(SCREENSHOT_FILE, f"Status verified: {current_status}")
-                    print("Telegram notification and proof delivered.")
+                    send_photo(SCREENSHOT_FILE, f"Current Status: {current_status}")
+                    print("Telegram notification delivered.")
                 else:
-                    print("Status unchanged since last check.")
+                    print("Status unchanged.")
             else:
-                print("Stage text not parsed. Sending updated screenshot...")
-                send_photo(SCREENSHOT_FILE, "⚠️ Submitted form, but status stage name not recognized. Check image.")
+                print("Stage name not recognized in text. Sending snapshot...")
+                send_photo(SCREENSHOT_FILE, "⚠️ Result loaded after submission. Check snapshot.")
 
         finally:
             browser.close()
