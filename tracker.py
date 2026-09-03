@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime, timezone, timedelta
 import requests
 from playwright.sync_api import sync_playwright
 
@@ -10,6 +11,9 @@ EMAIL = os.environ.get("APP_EMAIL", "ahmeddmemon@gmail.com")
 PORTAL_URL = "https://russia-edu.minobrnauki.gov.ru"
 STATE_FILE = "last_status.txt"
 SCREENSHOT_FILE = "screen.png"
+
+# Pakistan Standard Time (UTC+5)
+PKT = timezone(timedelta(hours=5))
 
 def send_alert(message: str):
     if not BOT_TOKEN or not CHAT_ID:
@@ -30,10 +34,11 @@ def send_photo(photo_path: str, caption: str):
         requests.post(url, data={"chat_id": CHAT_ID, "caption": caption}, files={"photo": f}, timeout=30)
 
 def normalize_text(text: str) -> str:
-    """Collapses multiple spaces, tabs, and newlines into single spaces."""
     return re.sub(r'\s+', ' ', text).strip().lower()
 
 def execute_check():
+    today_pkt = datetime.now(PKT).strftime("%Y-%m-%d")
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -74,33 +79,34 @@ def execute_check():
             raw_body = page.locator("body").inner_text()
             norm_body = normalize_text(raw_body)
 
-            # Debug output in Actions console
-            print("--- EXTRACTED PAGE TEXT SAMPLE ---")
-            print(norm_body[:800])
-            print("----------------------------------")
-
             current_status = None
-
-            # Flexible regex matching across normalized Russian and English labels
             if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
                 current_status = "Stage 2: Consideration of application"
             elif re.search(r'(distribution|распределени)', norm_body):
                 current_status = "Stage 3: Distribution"
             elif re.search(r'(verification|проверк)', norm_body):
                 current_status = "Stage 4: Verification"
-            elif re.search(r'(questionnaire|анкет|заполнение|черновик)', norm_body):
+            elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
                 current_status = "Stage 1: Entering the questionnaire"
 
             if current_status:
                 print(f"Status Matched: {current_status}")
+
+                # Read cached status and last recap date
                 old_status = ""
+                last_recap_date = ""
                 if os.path.exists(STATE_FILE):
                     with open(STATE_FILE, "r", encoding="utf-8") as f:
-                        old_status = f.read().strip()
+                        lines = [l.strip() for l in f if l.strip()]
+                        if len(lines) >= 1:
+                            old_status = lines[0]
+                        if len(lines) >= 2:
+                            last_recap_date = lines[1]
 
+                # Case 1: Status changed!
                 if current_status != old_status:
                     with open(STATE_FILE, "w", encoding="utf-8") as f:
-                        f.write(current_status)
+                        f.write(f"{current_status}\n{today_pkt}\n")
 
                     msg = (
                         f"🎓 *Minobrnauki Scholarship Status Update!*\n\n"
@@ -111,15 +117,39 @@ def execute_check():
                     )
                     send_alert(msg)
                     send_photo(SCREENSHOT_FILE, f"Current Status: {current_status}")
-                    print("Telegram alert delivered.")
+                    print("Status change detected. Full alert delivered.")
+
+                # Case 2: Status is the same
                 else:
-                    print(f"Status unchanged ({current_status}). Skipping notification.")
+                    if today_pkt != last_recap_date:
+                        # First run of the day -> Send one-time daily recap
+                        with open(STATE_FILE, "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}\n")
+
+                        recap_msg = (
+                            f"☀️ *Daily Check-in: Minobrnauki Tracker*\n\n"
+                            f"🤖 Bot is active for the day.\n"
+                            f"📌 *Reg No:* `{REG_NUMBER}`\n"
+                            f"📊 *Status:* *{current_status}* (Unchanged)\n\n"
+                            f"Monitoring silently for the rest of today."
+                        )
+                        send_alert(recap_msg)
+                        print("First run of the day: Daily recap ping delivered.")
+                    else:
+                        print(f"Status unchanged ({current_status}) and daily recap already sent today. Staying silent.")
+
             else:
-                print("Stage name not recognized in normalized text. Sending snapshot...")
+                print("Stage name not recognized in text. Sending snapshot...")
                 send_photo(SCREENSHOT_FILE, "⚠️ Result loaded after submission. Check snapshot.")
 
         finally:
             browser.close()
 
 if __name__ == "__main__":
-    execute_check()
+    try:
+        execute_check()
+    except Exception as e:
+        error_msg = f"⚠️ *Minobrnauki Tracker Error*\n\n`{str(e)[:300]}`\n\nCheck GitHub Actions run."
+        print(error_msg)
+        send_alert(error_msg)
+        raise e
