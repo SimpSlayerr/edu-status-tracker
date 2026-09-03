@@ -48,32 +48,37 @@ def execute_check():
             reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
             email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
 
+            reg_input.scroll_into_view_if_needed()
             reg_input.click()
             reg_input.fill(REG_NUMBER)
+
             email_input.click()
             email_input.fill(EMAIL)
 
-            print("3. Submitting form...")
-            btn = page.locator("button:has-text('Показать'), button:has-text('Show')").first
-            btn.click()
+            print("3. Clicking tracking submit button...")
+            # Target specifically the button directly below the email input
+            submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button[1]")
+            submit_btn.scroll_into_view_if_needed()
+            submit_btn.click()
 
-            print("4. Waiting for response...")
-            page.wait_for_timeout(7000)
+            print("4. Waiting for results to load...")
+            page.wait_for_timeout(8000)
 
-            # Capture full page screenshot for verification
+            # Capture page snapshot
             page.screenshot(path=SCREENSHOT_FILE, full_page=True)
 
             body = page.locator("body").inner_text()
 
+            # Identify current stage
             current_status = None
             if "Consideration of application" in body or "Рассмотрение заявки" in body or "Рассмотрение заявления" in body:
-                current_status = "Stage 2: Consideration of application"
+                current_status = "Stage 2: Consideration of application (Рассмотрение)"
             elif "Distribution" in body or "Распределение" in body:
-                current_status = "Stage 3: Distribution"
+                current_status = "Stage 3: Distribution (Распределение)"
             elif "Verification" in body or "Проверка" in body:
-                current_status = "Stage 4: Verification"
+                current_status = "Stage 4: Verification (Проверка)"
             elif "Entering the questionnaire" in body or "Заполнение анкеты" in body:
-                current_status = "Stage 1: Entering the questionnaire"
+                current_status = "Stage 1: Entering the questionnaire (Заполнение анкеты)"
 
             if current_status:
                 print(f"Status Found: {current_status}")
@@ -89,18 +94,18 @@ def execute_check():
                     msg = (
                         f"🎓 *Minobrnauki Scholarship Status Update!*\n\n"
                         f"📌 *Reg No:* `{REG_NUMBER}`\n"
-                        f"🔄 *Old Status:* {old_status if old_status else 'First Run / Initial Setup'}\n"
+                        f"🔄 *Old Status:* {old_status if old_status else 'First Run / Initialized'}\n"
                         f"🚀 *Current Status:* *{current_status}*\n\n"
                         f"🔗 [Open Portal]({PORTAL_URL})"
                     )
                     send_alert(msg)
-                    send_photo(SCREENSHOT_FILE, f"Portal snapshot for {REG_NUMBER}")
-                    print("Notification sent to Telegram!")
+                    send_photo(SCREENSHOT_FILE, f"Status verified: {current_status}")
+                    print("Telegram notification and proof delivered.")
                 else:
-                    print("Status unchanged.")
+                    print("Status unchanged since last check.")
             else:
-                print("Stage text not detected on page. Sending debug screenshot to Telegram...")
-                send_photo(SCREENSHOT_FILE, "⚠️ Portal loaded but status text wasn't recognized. Check image.")
+                print("Stage text not parsed. Sending updated screenshot...")
+                send_photo(SCREENSHOT_FILE, "⚠️ Submitted form, but status stage name not recognized. Check image.")
 
         finally:
             browser.close()
