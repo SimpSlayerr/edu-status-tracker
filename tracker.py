@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from playwright.sync_api import sync_playwright
 
@@ -32,47 +33,39 @@ def execute_check():
         )
         page = context.new_page()
 
-        print(f"Connecting to {PORTAL_URL}...")
+        print(f"1. Connecting to {PORTAL_URL}...")
         page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
 
-        # Fill the tracking inputs
-        inputs = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']")
-        if inputs.count() > 0:
-            inputs.first.fill(REG_NUMBER)
-            page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first.fill(EMAIL)
-        else:
-            # Fallback to general input fields in card
-            all_inputs = page.locator("input[type='text'], input:not([type])")
-            all_inputs.nth(0).fill(REG_NUMBER)
-            all_inputs.nth(1).fill(EMAIL)
+        print("2. Filling form inputs...")
+        inputs = page.locator("input[type='text'], input:not([type])")
+        inputs.nth(0).fill(REG_NUMBER)
+        inputs.nth(1).fill(EMAIL)
 
-        # Click search button
-        page.locator("button:has-text('Показать'), button:has-text('Show')").first.click()
-
-        # Wait for review information card to appear
-        page.wait_for_selector(
-            "text=Information on the application review, text=Информация о ходе рассмотрения",
-            timeout=30000
+        print("3. Submitting form...")
+        btn = page.locator("button, input[type='button'], input[type='submit']").filter(
+            has_text=re.compile(r"Показать|Show", re.I)
         )
-        page.wait_for_timeout(2500)
+        if btn.count() > 0:
+            btn.first.click()
+        else:
+            inputs.nth(1).press("Enter")
 
-        # Detect the current stage
-        body_text = page.locator("body").inner_text()
-        current_status = "Unknown / Need Review"
-        known_stages = [
-            "Entering the questionnaire",
-            "Consideration of application",
-            "Distribution",
-            "Verification",
-            "Заполнение анкеты",
-            "Рассмотрение заявки",
-            "Распределение",
-            "Проверка"
-        ]
-        for stage in known_stages:
-            if stage in body_text:
-                current_status = stage
-                break
+        print(f"4. Waiting for details matching {REG_NUMBER}...")
+        page.locator(f"text={REG_NUMBER}").first.wait_for(timeout=30000)
+        page.wait_for_timeout(2000)
+
+        # Detect the active stage from the page
+        body = page.locator("body").inner_text()
+        if "Consideration of application" in body or "Рассмотрение заявки" in body or "Рассмотрение заявления" in body:
+            current_status = "Stage 2: Consideration of application"
+        elif "Distribution" in body or "Распределение" in body:
+            current_status = "Stage 3: Distribution"
+        elif "Verification" in body or "Проверка" in body:
+            current_status = "Stage 4: Verification"
+        elif "Entering the questionnaire" in body or "Заполнение анкеты" in body:
+            current_status = "Stage 1: Entering the questionnaire"
+        else:
+            current_status = "Active / Status loaded (Review portal manually)"
 
         print(f"Detected Status: {current_status}")
 
@@ -86,16 +79,16 @@ def execute_check():
                 f.write(current_status)
 
             msg = (
-                f"🎓 *Minobrnauki Status Update!*\n\n"
+                f"🎓 *Minobrnauki Scholarship Status Update!*\n\n"
                 f"📌 *Reg No:* `{REG_NUMBER}`\n"
-                f"🔄 *Previous Stage:* {old_status if old_status else 'First Run / Initialized'}\n"
-                f"🚀 *Current Stage:* *{current_status}*\n\n"
+                f"🔄 *Old Status:* {old_status if old_status else 'First Run / Initialized'}\n"
+                f"🚀 *New Status:* *{current_status}*\n\n"
                 f"🔗 [Open Portal]({PORTAL_URL})"
             )
             send_alert(msg)
-            print("Status updated! Telegram message sent.")
+            print("Telegram alert sent successfully!")
         else:
-            print("Status unchanged.")
+            print("Status unchanged since last check.")
 
         browser.close()
 
