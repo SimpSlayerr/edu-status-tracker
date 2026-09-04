@@ -37,7 +37,21 @@ def normalize_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip().lower()
 
 def execute_check():
-    today_pkt = datetime.now(PKT).strftime("%Y-%m-%d")
+    now_pkt = datetime.now(PKT)
+    today_pkt = now_pkt.strftime("%Y-%m-%d")
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+
+    # Only enforce time window on automated cron runs (manual runs always execute)
+    if event_name == "schedule":
+        # Skip Saturday (5) and Sunday (6)
+        if now_pkt.weekday() >= 5:
+            print(f"Weekend ({now_pkt.strftime('%A')}). Skipping check.")
+            return
+
+        # Only run between 1:00 PM and 11:30 PM PKT (hours 13 through 23)
+        if not (13 <= now_pkt.hour <= 23):
+            print(f"Off-hours ({now_pkt.strftime('%I:%M %p')} PKT). Skipping check.")
+            return
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -92,7 +106,6 @@ def execute_check():
             if current_status:
                 print(f"Status Matched: {current_status}")
 
-                # Read cached status and last recap date
                 old_status = ""
                 last_recap_date = ""
                 if os.path.exists(STATE_FILE):
@@ -103,7 +116,7 @@ def execute_check():
                         if len(lines) >= 2:
                             last_recap_date = lines[1]
 
-                # Case 1: Status changed!
+                # Status changed -> Alert + screenshot
                 if current_status != old_status:
                     with open(STATE_FILE, "w", encoding="utf-8") as f:
                         f.write(f"{current_status}\n{today_pkt}\n")
@@ -119,10 +132,10 @@ def execute_check():
                     send_photo(SCREENSHOT_FILE, f"Current Status: {current_status}")
                     print("Status change detected. Full alert delivered.")
 
-                # Case 2: Status is the same
+                # Status unchanged
                 else:
                     if today_pkt != last_recap_date:
-                        # First run of the day -> Send one-time daily recap
+                        # First run of the day -> text-only ping
                         with open(STATE_FILE, "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
 
@@ -134,9 +147,9 @@ def execute_check():
                             f"Monitoring silently for the rest of today."
                         )
                         send_alert(recap_msg)
-                        print("First run of the day: Daily recap ping delivered.")
+                        print("Daily recap ping delivered.")
                     else:
-                        print(f"Status unchanged ({current_status}) and daily recap already sent today. Staying silent.")
+                        print(f"Status unchanged ({current_status}). Staying silent.")
 
             else:
                 print("Stage name not recognized in text. Sending snapshot...")
