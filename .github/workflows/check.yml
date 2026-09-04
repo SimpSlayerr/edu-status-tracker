@@ -2,8 +2,12 @@ name: Minobrnauki Status Tracker
 
 on:
   schedule:
-    # 8, 10, 12, 14, 16, 18 UTC = 1:27 PM, 3:27 PM, 5:27 PM, 7:27 PM, 9:27 PM, 11:27 PM PKT
-    - cron: '27 8,10,12,14,16,18 * * 1-5'
+    - cron: '27 8 * * 1-5'   # 1:27 PM PKT (08:27 UTC)
+    - cron: '27 10 * * 1-5'  # 3:27 PM PKT (10:27 UTC)
+    - cron: '27 12 * * 1-5'  # 5:27 PM PKT (12:27 UTC)
+    - cron: '27 14 * * 1-5'  # 7:27 PM PKT (14:27 UTC)
+    - cron: '27 16 * * 1-5'  # 9:27 PM PKT (16:27 UTC)
+    - cron: '27 18 * * 1-5'  # 11:27 PM PKT (18:27 UTC)
   workflow_dispatch:
 
 permissions:
