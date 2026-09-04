@@ -37,7 +37,9 @@ def normalize_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip().lower()
 
 def execute_check():
-    today_pkt = datetime.now(PKT).strftime("%Y-%m-%d")
+    now_pkt = datetime.now(PKT)
+    today_pkt = now_pkt.strftime("%Y-%m-%d")
+    current_hour = now_pkt.hour
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -121,22 +123,24 @@ def execute_check():
 
                 # Case 2: Status is unchanged
                 else:
-                    if today_pkt != last_recap_date:
-                        # First run of the day -> Send one-time TEXT-ONLY daily check-in (NO screenshot)
+                    # Fires on the morning run between 8:00 AM and 1:00 PM PKT
+                    is_morning_window = 8 <= current_hour < 13
+
+                    if today_pkt != last_recap_date and is_morning_window:
                         with open(STATE_FILE, "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
 
                         recap_msg = (
-                            f"☀️ *Daily Check-in: Minobrnauki Tracker*\n\n"
-                            f"🤖 Bot is active for the day.\n"
+                            f"☀️ *Daily Morning Check-in: Minobrnauki Tracker*\n\n"
+                            f"🤖 Bot is active and monitoring.\n"
                             f"📌 *Reg No:* `{REG_NUMBER}`\n"
                             f"📊 *Status:* *{current_status}* (Unchanged)\n\n"
                             f"Monitoring silently for the rest of today."
                         )
                         send_alert(recap_msg)
-                        print("First check of today: Text-only recap delivered.")
+                        print("Morning check-in delivered.")
                     else:
-                        print(f"Status unchanged ({current_status}) and recap already sent. Silent mode.")
+                        print(f"Status unchanged ({current_status}). Silent mode.")
 
             else:
                 print("Stage name not recognized in text. Sending snapshot...")
