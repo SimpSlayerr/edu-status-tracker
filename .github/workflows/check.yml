@@ -1,10 +1,7 @@
 name: Minobrnauki Status Tracker
 
 on:
-  schedule:
-    # Runs at minute 13 past every 4th hour (24/7, Mon-Sun)
-    # 01:13, 05:13, 09:13, 13:13, 17:13, 21:13 PKT
-    - cron: '13 */4 * * *'
+  
   workflow_dispatch:
 
 permissions:
