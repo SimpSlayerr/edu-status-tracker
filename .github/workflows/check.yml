@@ -2,8 +2,9 @@ name: Minobrnauki Status Tracker
 
 on:
   schedule:
-    # Dead-simple 2-hour interval (GitHub parser never chokes on this)
-    - cron: '27 */2 * * *'
+    # Runs at minute 13 past every 4th hour (24/7, Mon-Sun)
+    # 01:13, 05:13, 09:13, 13:13, 17:13, 21:13 PKT
+    - cron: '13 */4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +29,6 @@ jobs:
 
       - name: Run status checker
         env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           REG_NUMBER: ${{ secrets.REG_NUMBER }}
