@@ -3,7 +3,7 @@ name: Minobrnauki Status Tracker
 on:
   schedule:
     # Runs Mon-Fri every 2 hours from 1:27 PM to 11:27 PM GMT+5
-    - cron: '20 8-18/2 * * 1-5'
+    - cron: '27 8-18/2 * * 1-5'
   workflow_dispatch:
 
 permissions:
