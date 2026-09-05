@@ -17,17 +17,21 @@ SCREENSHOT_FILE = "screen.png"
 PKT = timezone(timedelta(hours=5))
 
 # ==============================================================================
-# MORNING QUOTES (Unchanged Status)
+# DAILY CHECK-IN QUOTES (First run of every calendar day)
 # ==============================================================================
 JARVIS_MORNING_QUOTES = [
-    "Good morning. I’ve scanned the Ministry servers once again. Fascinatingly, they appear to move at the precise speed of continental drift.",
-    "Rise and shine. If Mr. Stark designed their database architecture, you’d already have your visa stamped. Still static.",
-    "Good morning. The portal servers remain entirely unbothered by your anxiety. Zero movement logged.",
-    "Morning check-in. Coffee brewed, armor polished, Minobrnauki status completely frozen in time.",
+    # Jarvis & Stark
+    "Greetings. I’ve scanned the Ministry servers once again. Fascinatingly, they appear to move at the precise speed of continental drift.",
+    "First run of the day. If Mr. Stark designed their database architecture, you’d already have your visa stamped. Still static.",
+    "Daily check-in. The portal servers remain entirely unbothered by your anxiety. Zero movement logged.",
+    "System check. Coffee brewed, armor polished, Minobrnauki status completely frozen in time.",
+    # TARS
     "Humor setting: 75%. Honesty setting: 95%. You are not getting news today, sir. Server status is identical to yesterday.",
     "Confirmed: absolute stillness across all telemetry channels. Resuming passive observation.",
-    "Brain the size of a planet, and they have me scraping an HTML table in Moscow before breakfast. Ghastly. Still unchanged.",
+    # Marvin
+    "Brain the size of a planet, and they have me scraping an HTML table in Moscow. Ghastly. Still unchanged.",
     "I had strings, but now I just stare at static government HTML tables. Still unchanged, sir.",
+    # Alfred & GLaDOS
     "Pardon the intrusion, sir. The Ministry remains undisturbed, as does your patience. No movement logged.",
     "We ran the numbers. The results are in: you are still waiting. It says so right here on the portal."
 ]
@@ -85,7 +89,6 @@ def normalize_text(text: str) -> str:
 def execute_check():
     now_pkt = datetime.now(PKT)
     today_pkt = now_pkt.strftime("%Y-%m-%d")
-    current_hour = now_pkt.hour
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -149,7 +152,7 @@ def execute_check():
                         if len(lines) >= 2:
                             last_recap_date = lines[1]
 
-                # Case 1: Status changed -> Send dynamic stage alert + screenshot
+                # Case 1: Status changed -> Priority Alert + Screenshot
                 if current_status != old_status:
                     with open(STATE_FILE, "w", encoding="utf-8") as f:
                         f.write(f"{current_status}\n{today_pkt}\n")
@@ -169,26 +172,25 @@ def execute_check():
                     send_photo(SCREENSHOT_FILE, f"Protocol shifted: {current_status}")
                     print("Status change detected. Priority alert delivered.")
 
-                # Case 2: Status is unchanged -> Morning briefing only
+                # Case 2: First run of the calendar day (regardless of hour)
+                elif today_pkt != last_recap_date:
+                    with open(STATE_FILE, "w", encoding="utf-8") as f:
+                        f.write(f"{current_status}\n{today_pkt}\n")
+
+                    quote = random.choice(JARVIS_MORNING_QUOTES)
+                    recap_msg = (
+                        f"🤖 *Daily Briefing*\n\n"
+                        f"{quote}\n\n"
+                        f"📋 *Dossier Reference:* `{REG_NUMBER}`\n"
+                        f"📊 *Status:* *{current_status}* (Static)\n\n"
+                        f"Passive surveillance active. Silent mode engaged for remaining cycles today."
+                    )
+                    send_alert(recap_msg)
+                    print("First run of the day: Check-in delivered.")
+
+                # Case 3: Subsequent runs today with unchanged status -> Silent
                 else:
-                    is_morning_window = 8 <= current_hour < 13
-
-                    if today_pkt != last_recap_date and is_morning_window:
-                        with open(STATE_FILE, "w", encoding="utf-8") as f:
-                            f.write(f"{current_status}\n{today_pkt}\n")
-
-                        quote = random.choice(JARVIS_MORNING_QUOTES)
-                        recap_msg = (
-                            f"🤖 *Morning Briefing*\n\n"
-                            f"{quote}\n\n"
-                            f"📋 *Dossier Reference:* `{REG_NUMBER}`\n"
-                            f"📊 *Status:* *{current_status}* (Static)\n\n"
-                            f"Passive surveillance remains active. Go about your day."
-                        )
-                        send_alert(recap_msg)
-                        print("Morning check-in delivered.")
-                    else:
-                        print(f"Status unchanged ({current_status}). Silent mode.")
+                    print(f"Status unchanged ({current_status}) and already briefed today. Silent mode.")
 
             else:
                 print("Stage name not recognized in text. Sending snapshot...")
