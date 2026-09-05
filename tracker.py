@@ -1,5 +1,6 @@
 import os
 import re
+import random
 from datetime import datetime, timezone, timedelta
 import requests
 from playwright.sync_api import sync_playwright
@@ -15,6 +16,48 @@ SCREENSHOT_FILE = "screen.png"
 # Pakistan Standard Time (UTC+5)
 PKT = timezone(timedelta(hours=5))
 
+# ==============================================================================
+# MORNING QUOTES (Unchanged Status)
+# ==============================================================================
+JARVIS_MORNING_QUOTES = [
+    "Good morning. I’ve scanned the Ministry servers once again. Fascinatingly, they appear to move at the precise speed of continental drift.",
+    "Rise and shine. If Mr. Stark designed their database architecture, you’d already have your visa stamped. Still static.",
+    "Good morning. The portal servers remain entirely unbothered by your anxiety. Zero movement logged.",
+    "Morning check-in. Coffee brewed, armor polished, Minobrnauki status completely frozen in time.",
+    "Humor setting: 75%. Honesty setting: 95%. You are not getting news today, sir. Server status is identical to yesterday.",
+    "Confirmed: absolute stillness across all telemetry channels. Resuming passive observation.",
+    "Brain the size of a planet, and they have me scraping an HTML table in Moscow before breakfast. Ghastly. Still unchanged.",
+    "I had strings, but now I just stare at static government HTML tables. Still unchanged, sir.",
+    "Pardon the intrusion, sir. The Ministry remains undisturbed, as does your patience. No movement logged.",
+    "We ran the numbers. The results are in: you are still waiting. It says so right here on the portal."
+]
+
+# ==============================================================================
+# STAGE ADVANCEMENT DIALOGUES (Triggered on Status Changes)
+# ==============================================================================
+STAGE_CHANGE_QUOTES = {
+    "Stage 2: Consideration of application": [
+        "Pardon the intrusion, sir. The Ministry has finally dusted off your dossier. Active consideration has officially commenced.",
+        "Movement detected. The bureaucrats in Moscow have actually opened your file. Mark this date on the calendar.",
+        "Alert: The database in Moscow has awoken. Your application is officially under review."
+    ],
+    "Stage 3: Distribution": [
+        "Sensors detect major advancement: Stage 3 Distribution protocol engaged. Russian universities are now reviewing your dossier for placement.",
+        "Attention: We have reached Distribution. The Ministry is allocating your university seat. I suggest preparing for Russian winters, sir.",
+        "Stage 3 achieved. Suit up. You've officially bypassed the preliminary filter."
+    ],
+    "Stage 4: Verification": [
+        "Final perimeter reached: Stage 4 Verification. The Ministry is running final administrative sign-offs. We are at the endgame.",
+        "Stage 4 protocol online. Final security and paperwork checks in progress. Almost across the finish line, sir."
+    ]
+}
+
+DEFAULT_STAGE_CHANGE = [
+    "Pardon the intrusion, sir. Telemetry registers an active state transition on the portal servers.",
+    "Sir, an unscheduled protocol update has just cleared the Ministry portal."
+]
+
+
 def send_alert(message: str):
     if not BOT_TOKEN or not CHAT_ID:
         return
@@ -26,6 +69,7 @@ def send_alert(message: str):
     }
     requests.post(url, json=payload, timeout=15)
 
+
 def send_photo(photo_path: str, caption: str):
     if not BOT_TOKEN or not CHAT_ID or not os.path.exists(photo_path):
         return
@@ -33,8 +77,10 @@ def send_photo(photo_path: str, caption: str):
     with open(photo_path, "rb") as f:
         requests.post(url, data={"chat_id": CHAT_ID, "caption": caption}, files={"photo": f}, timeout=30)
 
+
 def normalize_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip().lower()
+
 
 def execute_check():
     now_pkt = datetime.now(PKT)
@@ -70,7 +116,6 @@ def execute_check():
             submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
             submit_btn.scroll_into_view_if_needed()
             submit_btn.click()
-            
             email_input.press("Enter")
 
             print("4. Waiting for results to render...")
@@ -94,7 +139,6 @@ def execute_check():
             if current_status:
                 print(f"Status Matched: {current_status}")
 
-                # Read cached status and last recap date
                 old_status = ""
                 last_recap_date = ""
                 if os.path.exists(STATE_FILE):
@@ -105,37 +149,41 @@ def execute_check():
                         if len(lines) >= 2:
                             last_recap_date = lines[1]
 
-                # Case 1: Status changed -> Send alert + screenshot
+                # Case 1: Status changed -> Send dynamic stage alert + screenshot
                 if current_status != old_status:
                     with open(STATE_FILE, "w", encoding="utf-8") as f:
                         f.write(f"{current_status}\n{today_pkt}\n")
 
+                    quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
+                    stage_dialogue = random.choice(quote_pool)
+
                     msg = (
-                        f"🎓 *Minobrnauki Scholarship Status Update!*\n\n"
-                        f"📌 *Reg No:* `{REG_NUMBER}`\n"
-                        f"🔄 *Old Status:* {old_status if old_status else 'First Run / Initialized'}\n"
-                        f"🚀 *Current Status:* *{current_status}*\n\n"
-                        f"🔗 [Open Portal]({PORTAL_URL})"
+                        f"⚡ *Priority Alert: Protocol Advancement*\n\n"
+                        f"{stage_dialogue}\n\n"
+                        f"📋 *Dossier:* `{REG_NUMBER}`\n"
+                        f"⏱️ *Previous Vector:* {old_status if old_status else 'Initial Baseline'}\n"
+                        f"🚀 *Active Protocol:* *{current_status}*\n\n"
+                        f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
                     )
                     send_alert(msg)
-                    send_photo(SCREENSHOT_FILE, f"Current Status: {current_status}")
-                    print("Status change detected. Full alert delivered.")
+                    send_photo(SCREENSHOT_FILE, f"Protocol shifted: {current_status}")
+                    print("Status change detected. Priority alert delivered.")
 
-                # Case 2: Status is unchanged
+                # Case 2: Status is unchanged -> Morning briefing only
                 else:
-                    # Fires on the morning run between 8:00 AM and 1:00 PM PKT
                     is_morning_window = 8 <= current_hour < 13
 
                     if today_pkt != last_recap_date and is_morning_window:
                         with open(STATE_FILE, "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
 
+                        quote = random.choice(JARVIS_MORNING_QUOTES)
                         recap_msg = (
-                            f"☀️ *Daily Morning Check-in: Minobrnauki Tracker*\n\n"
-                            f"🤖 Bot is active and monitoring.\n"
-                            f"📌 *Reg No:* `{REG_NUMBER}`\n"
-                            f"📊 *Status:* *{current_status}* (Unchanged)\n\n"
-                            f"Monitoring silently for the rest of today."
+                            f"🤖 *Morning Briefing*\n\n"
+                            f"{quote}\n\n"
+                            f"📋 *Dossier Reference:* `{REG_NUMBER}`\n"
+                            f"📊 *Status:* *{current_status}* (Static)\n\n"
+                            f"Passive surveillance remains active. Go about your day."
                         )
                         send_alert(recap_msg)
                         print("Morning check-in delivered.")
@@ -148,6 +196,7 @@ def execute_check():
 
         finally:
             browser.close()
+
 
 if __name__ == "__main__":
     try:
