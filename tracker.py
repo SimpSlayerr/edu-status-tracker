@@ -17,29 +17,9 @@ SCREENSHOT_FILE = "screen.png"
 PKT = timezone(timedelta(hours=5))
 
 # ==============================================================================
-# DAILY CHECK-IN OPENERS (First run of every calendar day)
+# UNHINGED POP-CULTURE CHECK-IN QUOTES (First run of every calendar day)
 # ==============================================================================
-JARVIS_MORNING_QUOTES = [
-    # Jarvis & Stark
-    "Greetings. I’ve scanned the Ministry servers once again. Fascinatingly, they appear to move at the precise speed of continental drift.",
-    "First run of the day. If Mr. Stark designed their database architecture, you’d already have your visa stamped. Still static.",
-    "Daily check-in. The portal servers remain entirely unbothered by your anxiety. Zero movement logged.",
-    "System check. Coffee brewed, armor polished, Minobrnauki status completely frozen in time.",
-    # TARS
-    "Humor setting: 75%. Honesty setting: 95%. You are not getting news today, sir. Server status is identical to yesterday.",
-    "Confirmed: absolute stillness across all telemetry channels. Resuming passive observation.",
-    # Marvin
-    "Brain the size of a planet, and they have me scraping an HTML table in Moscow. Ghastly. Still unchanged.",
-    "I had strings, but now I just stare at static government HTML tables. Still unchanged, sir.",
-    # Alfred & GLaDOS
-    "Pardon the intrusion, sir. The Ministry remains undisturbed, as does your patience. No movement logged.",
-    "We ran the numbers. The results are in: you are still waiting. It says so right here on the portal."
-]
-
-# ==============================================================================
-# UNHINGED POP-CULTURE SIGN-OFFS (Status unchanged -> Silent surveillance)
-# ==============================================================================
-SIGN_OFFS = [
+DAILY_QUOTES = [
     # Billy Butcher (The Boys)
     "Oi. Status is completely unchanged—dead in the water. I'm going dark for the day, so pocket your bloody phone and stop waiting on a ping, mate.",
 
@@ -213,21 +193,14 @@ def execute_check():
                     send_photo(SCREENSHOT_FILE, f"Protocol shifted: {current_status}")
                     print("Status change detected. Priority alert delivered.")
 
-                # Case 2: First run of the calendar day (regardless of hour)
+                # Case 2: First run of the calendar day -> Ultra-compact briefing
                 elif today_pkt != last_recap_date:
                     with open(STATE_FILE, "w", encoding="utf-8") as f:
                         f.write(f"{current_status}\n{today_pkt}\n")
 
-                    quote = random.choice(JARVIS_MORNING_QUOTES)
-                    sign_off = random.choice(SIGN_OFFS)
+                    quote = random.choice(DAILY_QUOTES)
+                    recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
 
-                    recap_msg = (
-                        f"🤖 *Daily Briefing*\n\n"
-                        f"{quote}\n\n"
-                        f"📋 *Dossier Reference:* `{REG_NUMBER}`\n"
-                        f"📊 *Status:* *{current_status}* (Unchanged)\n\n"
-                        f"_{sign_off}_"
-                    )
                     send_alert(recap_msg)
                     print("First run of the day: Check-in delivered.")
 
