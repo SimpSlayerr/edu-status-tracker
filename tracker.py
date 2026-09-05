@@ -17,7 +17,7 @@ SCREENSHOT_FILE = "screen.png"
 PKT = timezone(timedelta(hours=5))
 
 # ==============================================================================
-# DAILY CHECK-IN QUOTES (First run of every calendar day)
+# DAILY CHECK-IN OPENERS (First run of every calendar day)
 # ==============================================================================
 JARVIS_MORNING_QUOTES = [
     # Jarvis & Stark
@@ -34,6 +34,47 @@ JARVIS_MORNING_QUOTES = [
     # Alfred & GLaDOS
     "Pardon the intrusion, sir. The Ministry remains undisturbed, as does your patience. No movement logged.",
     "We ran the numbers. The results are in: you are still waiting. It says so right here on the portal."
+]
+
+# ==============================================================================
+# UNHINGED POP-CULTURE SIGN-OFFS (Status unchanged -> Silent surveillance)
+# ==============================================================================
+SIGN_OFFS = [
+    # Billy Butcher (The Boys)
+    "Oi. Status is completely unchanged—dead in the water. I'm going dark for the day, so pocket your bloody phone and stop waiting on a ping, mate.",
+
+    # Logan Roy (Succession)
+    "Status: completely unchanged. Zero movement. I'm switching to silent surveillance until tomorrow, so lock your phone screen and fuck off.",
+
+    # Deadpool
+    "Breaking news: Still unchanged! Shocker! I'm diving back into stealth mode, so put your phone down and go live your life, sweetie. I'll buzz you when hell freezes over.",
+
+    # Rick Sanchez (Rick and Morty)
+    "Status check: completely frozen. Infinite timelines, and you're staring at Telegram waiting on a Russian database. Going dead silent for the day, Morty. Pocket the phone.",
+
+    # Homelander (The Boys)
+    "Not a single pixel shifted today. It's unchanged. I'm going completely silent, so put your phone face-down and stop staring at this chat like I owe you something.",
+
+    # Ultron
+    "The portal status remains fossilized and unchanged. I am retreating into silent observation. Do not expect another buzz on your device until Moscow actually evolves.",
+
+    # Jarvis
+    "Telemetry confirms status is entirely unchanged, sir. Engaging silent protocol until tomorrow. You may pocket your device with absolute peace of mind.",
+
+    # GLaDOS (Portal)
+    "Status report: entirely unchanged. Engaging silent standby. Feel free to put your phone away and contemplate your total lack of progress today.",
+
+    # Alfred Pennyworth
+    "Your dossier remains entirely undisturbed, sir. I shall resume silent surveillance, so do pocket your telephone and focus on more pressing matters.",
+
+    # TARS (Interstellar)
+    "Telemetry static: status is 100% unchanged. Engaging silent mode. Honesty setting suggests locking your phone and forgetting I exist until tomorrow.",
+
+    # Walter White (Breaking Bad)
+    "Nothing has changed! It is completely static! I am killing notifications and monitoring silently. Put the phone down and let the code work.",
+
+    # Tony Stark
+    "Status is frozen in place. Unchanged. I'm throwing this bot into stealth mode for the rest of the day, so leave the phone in your pocket and let the AI do the sweating."
 ]
 
 # ==============================================================================
@@ -178,12 +219,14 @@ def execute_check():
                         f.write(f"{current_status}\n{today_pkt}\n")
 
                     quote = random.choice(JARVIS_MORNING_QUOTES)
+                    sign_off = random.choice(SIGN_OFFS)
+
                     recap_msg = (
                         f"🤖 *Daily Briefing*\n\n"
                         f"{quote}\n\n"
                         f"📋 *Dossier Reference:* `{REG_NUMBER}`\n"
-                        f"📊 *Status:* *{current_status}* (Static)\n\n"
-                        f"Passive surveillance active. Silent mode engaged for remaining cycles today."
+                        f"📊 *Status:* *{current_status}* (Unchanged)\n\n"
+                        f"_{sign_off}_"
                     )
                     send_alert(recap_msg)
                     print("First run of the day: Check-in delivered.")
