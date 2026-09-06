@@ -26,7 +26,7 @@ APPLICANTS = [
     {
         "name": "Imran",
         "reg_number": "PAK-0162/26",
-        "email": "Imrannoshadkhan@gmail.com",
+        "email": "imrannoshadkhan@gmail.com",
         "chat_id": "6846499897",
         "state_file": "status_imran.txt"
     }
@@ -143,15 +143,15 @@ def execute_check():
                 page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
                 page.wait_for_timeout(3000)
 
-                # Input credentials
+                # Input credentials (sanitized: lowercased and stripped of accidental spaces)
                 reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
                 email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
 
                 reg_input.scroll_into_view_if_needed()
-                reg_input.fill(user["reg_number"])
+                reg_input.fill(user["reg_number"].strip())
 
                 email_input.scroll_into_view_if_needed()
-                email_input.fill(user["email"])
+                email_input.fill(user["email"].strip().lower())
 
                 # Submit form
                 submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
