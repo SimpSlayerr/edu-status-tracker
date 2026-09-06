@@ -6,15 +6,31 @@ import requests
 from playwright.sync_api import sync_playwright
 
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-REG_NUMBER = os.environ.get("REG_NUMBER", "PAK-0072/26")
-EMAIL = os.environ.get("APP_EMAIL", "ahmeddmemon@gmail.com")
+ADMIN_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 PORTAL_URL = "https://russia-edu.minobrnauki.gov.ru"
-STATE_FILE = "last_status.txt"
-SCREENSHOT_FILE = "screen.png"
 
 # Pakistan Standard Time (UTC+5)
 PKT = timezone(timedelta(hours=5))
+
+# ==============================================================================
+# ROSTER: Yours pulls from Secrets; Imran is hardcoded
+# ==============================================================================
+APPLICANTS = [
+    {
+        "name": "Ahmed",
+        "reg_number": os.environ.get("REG_NUMBER", "PAK-0072/26"),
+        "email": os.environ.get("APP_EMAIL", "ahmeddmemon@gmail.com"),
+        "chat_id": ADMIN_CHAT_ID,
+        "state_file": "last_status.txt"
+    },
+    {
+        "name": "Imran",
+        "reg_number": "PAK-0162/26",
+        "email": "Imrannoshadkhan@gmail.com",
+        "chat_id": "6846499897",
+        "state_file": "status_imran.txt"
+    }
+]
 
 # ==============================================================================
 # UNHINGED POP-CULTURE CHECK-IN QUOTES (First run of every calendar day)
@@ -83,24 +99,24 @@ DEFAULT_STAGE_CHANGE = [
 ]
 
 
-def send_alert(message: str):
-    if not BOT_TOKEN or not CHAT_ID:
+def send_alert(message: str, target_chat_id: str):
+    if not BOT_TOKEN or not target_chat_id:
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
-        "chat_id": CHAT_ID,
+        "chat_id": target_chat_id,
         "text": message,
         "parse_mode": "Markdown"
     }
     requests.post(url, json=payload, timeout=15)
 
 
-def send_photo(photo_path: str, caption: str):
-    if not BOT_TOKEN or not CHAT_ID or not os.path.exists(photo_path):
+def send_photo(photo_path: str, caption: str, target_chat_id: str):
+    if not BOT_TOKEN or not target_chat_id or not os.path.exists(photo_path):
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     with open(photo_path, "rb") as f:
-        requests.post(url, data={"chat_id": CHAT_ID, "caption": caption}, files={"photo": f}, timeout=30)
+        requests.post(url, data={"chat_id": target_chat_id, "caption": caption}, files={"photo": f}, timeout=30)
 
 
 def normalize_text(text: str) -> str:
@@ -122,95 +138,96 @@ def execute_check():
         page = context.new_page()
 
         try:
-            print(f"1. Loading {PORTAL_URL}...")
-            page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
-            page.wait_for_timeout(3000)
+            for user in APPLICANTS:
+                print(f"=== Scraping for {user['name']} ({user['reg_number']}) ===")
+                page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
+                page.wait_for_timeout(3000)
 
-            print("2. Filling input fields...")
-            reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
-            email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
+                # Input credentials
+                reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
+                email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
 
-            reg_input.scroll_into_view_if_needed()
-            reg_input.fill(REG_NUMBER)
+                reg_input.scroll_into_view_if_needed()
+                reg_input.fill(user["reg_number"])
 
-            email_input.scroll_into_view_if_needed()
-            email_input.fill(EMAIL)
+                email_input.scroll_into_view_if_needed()
+                email_input.fill(user["email"])
 
-            print("3. Submitting form...")
-            submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
-            submit_btn.scroll_into_view_if_needed()
-            submit_btn.click()
-            email_input.press("Enter")
+                # Submit form
+                submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
+                submit_btn.scroll_into_view_if_needed()
+                submit_btn.click()
+                email_input.press("Enter")
 
-            print("4. Waiting for results to render...")
-            page.wait_for_timeout(10000)
+                page.wait_for_timeout(10000)
 
-            page.screenshot(path=SCREENSHOT_FILE, full_page=True)
+                screenshot_file = f"screen_{user['name'].lower().replace(' ', '_')}.png"
+                page.screenshot(path=screenshot_file, full_page=True)
 
-            raw_body = page.locator("body").inner_text()
-            norm_body = normalize_text(raw_body)
+                raw_body = page.locator("body").inner_text()
+                norm_body = normalize_text(raw_body)
 
-            current_status = None
-            if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
-                current_status = "Stage 2: Consideration of application"
-            elif re.search(r'(distribution|распределени)', norm_body):
-                current_status = "Stage 3: Distribution"
-            elif re.search(r'(verification|проверк)', norm_body):
-                current_status = "Stage 4: Verification"
-            elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
-                current_status = "Stage 1: Entering the questionnaire"
+                current_status = None
+                if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
+                    current_status = "Stage 2: Consideration of application"
+                elif re.search(r'(distribution|распределени)', norm_body):
+                    current_status = "Stage 3: Distribution"
+                elif re.search(r'(verification|проверк)', norm_body):
+                    current_status = "Stage 4: Verification"
+                elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
+                    current_status = "Stage 1: Entering the questionnaire"
 
-            if current_status:
-                print(f"Status Matched: {current_status}")
+                if current_status:
+                    print(f"Status Matched for {user['name']}: {current_status}")
 
-                old_status = ""
-                last_recap_date = ""
-                if os.path.exists(STATE_FILE):
-                    with open(STATE_FILE, "r", encoding="utf-8") as f:
-                        lines = [l.strip() for l in f if l.strip()]
-                        if len(lines) >= 1:
-                            old_status = lines[0]
-                        if len(lines) >= 2:
-                            last_recap_date = lines[1]
+                    old_status = ""
+                    last_recap_date = ""
+                    if os.path.exists(user["state_file"]):
+                        with open(user["state_file"], "r", encoding="utf-8") as f:
+                            lines = [l.strip() for l in f if l.strip()]
+                            if len(lines) >= 1:
+                                old_status = lines[0]
+                            if len(lines) >= 2:
+                                last_recap_date = lines[1]
 
-                # Case 1: Status changed -> Priority Alert + Screenshot
-                if current_status != old_status:
-                    with open(STATE_FILE, "w", encoding="utf-8") as f:
-                        f.write(f"{current_status}\n{today_pkt}\n")
+                    # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
+                    if current_status != old_status:
+                        with open(user["state_file"], "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}\n")
 
-                    quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
-                    stage_dialogue = random.choice(quote_pool)
+                        quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
+                        stage_dialogue = random.choice(quote_pool)
 
-                    msg = (
-                        f"⚡ *Priority Alert: Protocol Advancement*\n\n"
-                        f"{stage_dialogue}\n\n"
-                        f"📋 *Dossier:* `{REG_NUMBER}`\n"
-                        f"⏱️ *Previous Vector:* {old_status if old_status else 'Initial Baseline'}\n"
-                        f"🚀 *Active Protocol:* *{current_status}*\n\n"
-                        f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
-                    )
-                    send_alert(msg)
-                    send_photo(SCREENSHOT_FILE, f"Protocol shifted: {current_status}")
-                    print("Status change detected. Priority alert delivered.")
+                        msg = (
+                            f"⚡ *Priority Alert: Protocol Advancement*\n\n"
+                            f"{stage_dialogue}\n\n"
+                            f"📋 *Dossier:* `{user['reg_number']}`\n"
+                            f"⏱️ *Previous Vector:* {old_status if old_status else 'Initial Baseline'}\n"
+                            f"🚀 *Active Protocol:* *{current_status}*\n\n"
+                            f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
+                        )
+                        send_alert(msg, user["chat_id"])
+                        send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
+                        print(f"Priority alert dispatched to {user['name']}.")
 
-                # Case 2: First run of the calendar day -> Ultra-compact briefing
-                elif today_pkt != last_recap_date:
-                    with open(STATE_FILE, "w", encoding="utf-8") as f:
-                        f.write(f"{current_status}\n{today_pkt}\n")
+                    # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
+                    elif today_pkt != last_recap_date:
+                        with open(user["state_file"], "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}\n")
 
-                    quote = random.choice(DAILY_QUOTES)
-                    recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
+                        quote = random.choice(DAILY_QUOTES)
+                        recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
 
-                    send_alert(recap_msg)
-                    print("First run of the day: Check-in delivered.")
+                        send_alert(recap_msg, user["chat_id"])
+                        print(f"Daily briefing dispatched to {user['name']}.")
 
-                # Case 3: Subsequent runs today with unchanged status -> Silent
+                    # Case 3: Subsequent runs today with unchanged status -> Silent
+                    else:
+                        print(f"{user['name']}: Status unchanged ({current_status}) and already briefed today. Silent mode.")
+
                 else:
-                    print(f"Status unchanged ({current_status}) and already briefed today. Silent mode.")
-
-            else:
-                print("Stage name not recognized in text. Sending snapshot...")
-                send_photo(SCREENSHOT_FILE, "⚠️ Result loaded after submission. Check snapshot.")
+                    print(f"Stage name not recognized for {user['name']}. Sending snapshot...")
+                    send_photo(screenshot_file, f"⚠️ Unable to parse stage for {user['reg_number']}. Verify snapshot.", user["chat_id"])
 
         finally:
             browser.close()
@@ -222,5 +239,6 @@ if __name__ == "__main__":
     except Exception as e:
         error_msg = f"⚠️ *Minobrnauki Tracker Error*\n\n`{str(e)[:300]}`\n\nCheck GitHub Actions run."
         print(error_msg)
-        send_alert(error_msg)
+        if ADMIN_CHAT_ID:
+            send_alert(error_msg, ADMIN_CHAT_ID)
         raise e
