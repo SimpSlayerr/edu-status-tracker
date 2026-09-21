@@ -197,6 +197,61 @@ def normalize_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip().lower()
 
 
+def scrape_applicant(browser, user):
+    """Scrapes one applicant with an isolated browser context and dynamic polling."""
+    # Fresh isolated context for every search (eliminates cookie/session bleed)
+    context = browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    )
+    page = context.new_page()
+    screenshot_file = f"screen_{user['name'].lower().replace(' ', '_')}.png"
+    matched_status = None
+
+    try:
+        page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
+        page.wait_for_timeout(3000)
+
+        reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
+        email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
+
+        reg_input.scroll_into_view_if_needed()
+        reg_input.fill("")
+        reg_input.fill(user["reg_number"].strip())
+
+        email_input.scroll_into_view_if_needed()
+        email_input.fill("")
+        email_input.fill(user["email"].strip().lower())
+
+        submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
+        submit_btn.scroll_into_view_if_needed()
+        submit_btn.click()
+
+        # Dynamic Polling: Check DOM every 2s up to 26s (prevents early cutoff if Russian server is slow)
+        for _ in range(13):
+            page.wait_for_timeout(2000)
+            norm_body = normalize_text(page.locator("body").inner_text())
+
+            if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
+                matched_status = "Stage 2: Consideration of application"
+                break
+            elif re.search(r'(distribution|распределени)', norm_body):
+                matched_status = "Stage 3: Distribution"
+                break
+            elif re.search(r'(verification|проверк)', norm_body):
+                matched_status = "Stage 4: Verification"
+                break
+            elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
+                matched_status = "Stage 1: Entering the questionnaire"
+                break
+
+        page.screenshot(path=screenshot_file, full_page=True)
+        return matched_status, screenshot_file
+
+    finally:
+        page.close()
+        context.close()
+
+
 def execute_check():
     now_pkt = datetime.now(PKT)
     today_pkt = now_pkt.strftime("%Y-%m-%d")
@@ -206,115 +261,75 @@ def execute_check():
             headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"]
         )
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        )
 
         try:
             for index, user in enumerate(APPLICANTS):
                 print(f"=== Scraping for {user['name']} ({user['reg_number']}) ===")
 
-                # Pause between users to avoid triggering portal rate-limiting
+                # 10s cooldown before Imran so the portal doesn't throttle consecutive requests
                 if index > 0:
-                    time.sleep(5)
+                    time.sleep(10)
 
-                # Isolated browser page per user session
-                page = context.new_page()
+                # Attempt 1
+                current_status, screenshot_file = scrape_applicant(browser, user)
 
-                try:
-                    page.goto(PORTAL_URL, timeout=60000, wait_until="networkidle")
-                    page.wait_for_timeout(3000)
+                # Auto-retry once if status missed due to transient network lag
+                if not current_status:
+                    print(f"⚠️ Initial query missed for {user['name']}. Retrying in 8 seconds...")
+                    time.sleep(8)
+                    current_status, screenshot_file = scrape_applicant(browser, user)
 
-                    # Input credentials (sanitized: lowercased and stripped of accidental spaces)
-                    reg_input = page.locator("input[placeholder*='ABC-0123'], input[placeholder*='Регистрационный']").first
-                    email_input = page.locator("input[placeholder*='E-mail'], input[placeholder*='e-mail']").first
+                if current_status:
+                    print(f"Status Matched for {user['name']}: {current_status}")
 
-                    reg_input.scroll_into_view_if_needed()
-                    reg_input.fill("")
-                    reg_input.fill(user["reg_number"].strip())
+                    old_status = ""
+                    last_recap_date = ""
+                    if os.path.exists(user["state_file"]):
+                        with open(user["state_file"], "r", encoding="utf-8") as f:
+                            lines = [l.strip() for l in f if l.strip()]
+                            if len(lines) >= 1:
+                                old_status = lines[0]
+                            if len(lines) >= 2:
+                                last_recap_date = lines[1]
 
-                    email_input.scroll_into_view_if_needed()
-                    email_input.fill("")
-                    email_input.fill(user["email"].strip().lower())
+                    # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
+                    if current_status != old_status:
+                        with open(user["state_file"], "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}\n")
 
-                    # Submit form cleanly
-                    submit_btn = page.locator("//input[contains(@placeholder, 'mail') or contains(@placeholder, 'E-mail')]/following::button").first
-                    submit_btn.scroll_into_view_if_needed()
-                    submit_btn.click()
+                        quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
+                        stage_dialogue = random.choice(quote_pool)
 
-                    # Wait for results to render
-                    page.wait_for_timeout(10000)
+                        msg = (
+                            f"⚡ *Priority Alert: Protocol Advancement*\n\n"
+                            f"{stage_dialogue}\n\n"
+                            f"📋 *Dossier:* `{user['reg_number']}`\n"
+                            f"⏱️ *Previous Vector:* {old_status if old_status else 'Initial Baseline'}\n"
+                            f"🚀 *Active Protocol:* *{current_status}*\n\n"
+                            f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
+                        )
+                        send_alert(msg, user["chat_id"])
+                        send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
+                        print(f"Priority alert dispatched to {user['name']}.")
 
-                    screenshot_file = f"screen_{user['name'].lower().replace(' ', '_')}.png"
-                    page.screenshot(path=screenshot_file, full_page=True)
+                    # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
+                    elif today_pkt != last_recap_date:
+                        with open(user["state_file"], "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}\n")
 
-                    raw_body = page.locator("body").inner_text()
-                    norm_body = normalize_text(raw_body)
+                        quote = random.choice(DAILY_QUOTES)
+                        recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
 
-                    current_status = None
-                    if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
-                        current_status = "Stage 2: Consideration of application"
-                    elif re.search(r'(distribution|распределени)', norm_body):
-                        current_status = "Stage 3: Distribution"
-                    elif re.search(r'(verification|проверк)', norm_body):
-                        current_status = "Stage 4: Verification"
-                    elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
-                        current_status = "Stage 1: Entering the questionnaire"
+                        send_alert(recap_msg, user["chat_id"])
+                        print(f"Daily briefing dispatched to {user['name']}.")
 
-                    if current_status:
-                        print(f"Status Matched for {user['name']}: {current_status}")
-
-                        old_status = ""
-                        last_recap_date = ""
-                        if os.path.exists(user["state_file"]):
-                            with open(user["state_file"], "r", encoding="utf-8") as f:
-                                lines = [l.strip() for l in f if l.strip()]
-                                if len(lines) >= 1:
-                                    old_status = lines[0]
-                                if len(lines) >= 2:
-                                    last_recap_date = lines[1]
-
-                        # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
-                        if current_status != old_status:
-                            with open(user["state_file"], "w", encoding="utf-8") as f:
-                                f.write(f"{current_status}\n{today_pkt}\n")
-
-                            quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
-                            stage_dialogue = random.choice(quote_pool)
-
-                            msg = (
-                                f"⚡ *Priority Alert: Protocol Advancement*\n\n"
-                                f"{stage_dialogue}\n\n"
-                                f"📋 *Dossier:* `{user['reg_number']}`\n"
-                                f"⏱️ *Previous Vector:* {old_status if old_status else 'Initial Baseline'}\n"
-                                f"🚀 *Active Protocol:* *{current_status}*\n\n"
-                                f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
-                            )
-                            send_alert(msg, user["chat_id"])
-                            send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
-                            print(f"Priority alert dispatched to {user['name']}.")
-
-                        # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
-                        elif today_pkt != last_recap_date:
-                            with open(user["state_file"], "w", encoding="utf-8") as f:
-                                f.write(f"{current_status}\n{today_pkt}\n")
-
-                            quote = random.choice(DAILY_QUOTES)
-                            recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
-
-                            send_alert(recap_msg, user["chat_id"])
-                            print(f"Daily briefing dispatched to {user['name']}.")
-
-                        # Case 3: Subsequent runs today with unchanged status -> Silent
-                        else:
-                            print(f"{user['name']}: Status unchanged ({current_status}) and already briefed today. Silent mode.")
-
+                    # Case 3: Subsequent runs today with unchanged status -> Silent
                     else:
-                        print(f"Stage name not recognized for {user['name']}. Sending snapshot...")
-                        send_photo(screenshot_file, f"⚠️ Unable to parse stage for {user['reg_number']}. Verify snapshot.", user["chat_id"])
+                        print(f"{user['name']}: Status unchanged ({current_status}) and already briefed today. Silent mode.")
 
-                finally:
-                    page.close()
+                else:
+                    print(f"Stage name not recognized for {user['name']}. Sending snapshot...")
+                    send_photo(screenshot_file, f"⚠️ Unable to parse stage for {user['reg_number']}. Verify snapshot.", user["chat_id"])
 
         finally:
             browser.close()
