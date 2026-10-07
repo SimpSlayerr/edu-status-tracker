@@ -34,123 +34,90 @@ APPLICANTS = [
 ]
 
 # ==============================================================================
-# 30 ICONIC DESI CINEMA & MEME BRIEFINGS (First run of every calendar day)
+# 30 ICONIC MOVIE & TV SERIES BRIEFINGS (When stuck on Stage 1 / Unchanged Status)
 # ==============================================================================
 DAILY_QUOTES = [
-    # 1. Gangs of Wasseypur (Ramadhir Singh)
-    "Beta, tumse na ho payega... Moscow ka babu chai pee raha hai aur tum yahan screen ghoor rahe ho. Status bilkul nahi hila, phone jeb mein daalo.",
+    # The Office
+    "The Office (Michael Scott): 'Well, well, well, how the turntables... haven't turned at all. Not even a single degree. Zero updates today.'",
+    "The Office (Stanley Hudson): 'It's called waiting, and it's what we do. Did I stutter? Status is unchanged. Back to work.'",
+    "The Office (Jim Halpert): '*Looks directly into the camera in exhausted silence.* Status: still Stage 1.'",
 
-    # 2. Mirzapur (Kaleen Bhaiya)
-    "Rest kijiye, varna rest in peace ho jaoge. Telemetry bilkul static hai aaj. Phone side pe rakho aur aaraam se apna din guzaro.",
+    # Breaking Bad & Better Call Saul
+    "Breaking Bad (Mike Ehrmantraut): 'Here's what's gonna happen: You're gonna put the phone down, you're not gonna touch the browser, and you're gonna go about your day. Zero delta.'",
+    "Breaking Bad (Walter White): 'I am the one who... waits. Say my name? Still Stage 1 on the registry.'",
+    "Better Call Saul (Saul Goodman): 'Did you know you have rights? The Constitution says you do. But Moscow's portal doesn't care. Nothing changed.'",
 
-    # 3. Hera Pheri (Baburao Apte)
-    "Utha le re baba, utha le... arey status ko nahi, is phone ko side pe utha ke rakh! Ek byte nahi badla Moscow ke server pe.",
+    # Game of Thrones
+    "Game of Thrones (Tyrion Lannister): 'That's what I do: I drink, and I know things. And today, I know Moscow hasn't touched your file.'",
+    "Game of Thrones (Ned Stark): 'Brace yourselves... winter is coming, but this status update is not. Telemetry completely static.'",
+    "Game of Thrones (Bran Stark): 'Why do you think I came all this way? Certainly not to watch an empty database. Screen off.'",
 
-    # 4. Munna Bhai M.B.B.S. (Circuit)
-    "Bhai ne bola status unchanged hai, matlab unchanged hai! Tension nahi lene ka mamu, apun kal subah direct ping karega.",
+    # Sci-Fi & Mind-Benders
+    "Interstellar (Cooper): 'This little maneuver is going to cost us 51 years. Another day, another zero on the portal.'",
+    "The Matrix (Morpheus): 'I can only show you the door. You're the one who has to wait outside until Moscow decides to unlock it.'",
+    "Inception (Cobb): 'You're waiting for a train. A train that will take you far away. But right now? That train hasn't left the station.'",
 
-    # 5. Welcome (Uday Shetty)
-    "Control, Majnu, control! Subah-subah itna hyper hone ki zaroorat nahi hai. Moscow abhi so raha hai, screen lock karo aur kaam pe lago.",
+    # Gotham & Comic Book
+    "The Dark Knight (The Joker): 'Why so serious? It's just an unchanged Russian portal. Put a smile on that face and close Telegram.'",
+    "The Dark Knight (Alfred): 'Some men just want to watch the world burn. Others just want Moscow to click one button. Today is not that day.'",
+    "Avengers: Endgame (Thanos): 'I am inevitable. But this Russian portal? Completely immovable. Zero change detected.'",
 
-    # 6. 3 Idiots (Rancho)
-    "Arey shanti, dost... portal koi rocket science nahi chala raha. Status wahi ka wahi hai. 'All is well' bolo aur phone pocket mein daalo.",
+    # Crime & Cult Classics
+    "Pulp Fiction (Jules Winnfield): 'Say \"refresh\" again. Say \"refresh\" again, I dare you, I double dare you! Status unchanged.'",
+    "Fight Club (Tyler Durden): 'The things you own end up owning you—like this status tracker. Let it go. Zero movement detected.'",
+    "Peaky Blinders (Tommy Shelby): 'By order of the Peaky Blinders... do not check this damn portal until tomorrow. Stand down.'",
+    "The Godfather (Don Corleone): 'I made them an application they couldn't refuse... yet here we are, still waiting. Respect the timeline.'",
+    "The Big Lebowski (The Dude): 'Yeah, well, you know, that's just, like, the database's opinion, man. Abide the wait.'",
 
-    # 7. Sholay (Gabbar Singh)
-    "Kitne updates the? Ek bhi nahi! Portal bilkul sunsaan pada hai. So jao beta, jab tak Moscow file nahi kholta tab tak notifications band.",
+    # Sitcoms & Comedy
+    "Friends (Chandler Bing): 'Could this portal BE any slower? Absolutely nothing changed today.'",
+    "Brooklyn Nine-Nine (Captain Holt): 'Status update: Bone-dry. Zero movement detected. As predictable as it is devastating. Dismissed.'",
+    "Parks and Recreation (Ron Swanson): 'Give me all the bacon and eggs you have. Because you're getting zero status updates from Russia today.'",
+    "Silicon Valley (Gilfoyle): 'I automated this script because human patience is inefficient. The status didn't move. Go away.'",
+    "Shrek (Donkey): '\"Are we there yet?\" No. \"Are we there yet?\" Still no. Stage 1 locked in.'",
 
-    # 8. Sacred Games (Ganesh Gaitonde)
-    "Kabhi kabhi lagta hai apun hi idhar wait kar raha hai, Moscow ko koi parwah hi nahi. Telemetry bilkul silent hai aaj, chill maaro.",
-
-    # 9. Gangs of Wasseypur (Sardar Khan)
-    "Baap ka, dada ka, bhai ka... sabka badla lega re tera tracker, lekin tab jab Moscow ka status hilega. Filhaal zero movement hai.",
-
-    # 10. Phir Hera Pheri (Raju)
-    "25 din mein status double? Aisa koi scheme nahi hai Russian Ministry mein. File bilkul freeze hai, phone rakh do chup chaap.",
-
-    # 11. Andaz Apna Apna (Crime Master Gogo)
-    "Aankhein nikaal ke gotiyan khelunga agar bar bar refresh kiya! Status wahi hai, khali hath ja rahe ho aaj. Phone lock karo.",
-
-    # 12. Mirzapur (Guddu Pandit)
-    "Shuru majboori mein kiye the, ab maza tab aayega jab Stage 2 aayega. Par aaj nahi aa raha. Shanti se baitho.",
-
-    # 13. Deewar (Vijay)
-    "Aaj mere paas automated script hai, GitHub Actions hai, Playwright hai... par status wahi ka wahi hai. Pocket the phone.",
-
-    # 14. Hera Pheri (Kachra Seth)
-    "Dedh sau rupiya dega... par Moscow ka babu file ko haath bhi nahi lagayega. Zero progress detected, band karo Telegram.",
-
-    # 15. DDLJ (Bauji)
-    "Jaa Simran jaa, jee le apni zindagi... kyunki Russian portal to hilne se raha. Status unchanged hai, shaam tak aish kar.",
-
-    # 16. Chup Chup Ke (Bandya)
-    "Mujhe sab aata hai, main sab kar sakta hoon... bas Moscow ka server nahi chala sakta. Shanti se phone rakh de bhai.",
-
-    # 17. Sarabhai vs Sarabhai (Maya Sarabhai)
-    "Subah-subah bar-bar screen refresh karna is categorically middle class! Status freeze hai, chai piyo aur class dikhao.",
-
-    # 18. Munna Bhai M.B.B.S. (Dr. Asthana)
-    "Laughter is the best medicine... par is portal ki speed dekh ke hasi bhi nahi aa rahi. Static telemetry. Silent mode on.",
-
-    # 19. Don (SRK)
-    "Status update ko pakadna mushkil hi nahi, namumkin hai... filhaal ke liye. Aaj ka scorecard zero hai, kal milte hain.",
-
-    # 20. Welcome (Majnu Bhai)
-    "Yeh meri live-drawn painting nahi hai jo badal jaye, Russian database hai, ek inch nahi hil raha! Screen band karo.",
-
-    # 21. Om Shanti Om (Om Kapoor)
-    "Picture abhi baaki hai mere dost... lekin aaj ka show bilkul static hai. Low-power mode engaged, go do some real work.",
-
-    # 22. Sholay (Thakur)
-    "Yeh haath mujhe de de Gabbar... taaki main is phone ko lock karke side pe phenk sakun! Ek bhi status transition nahi hua.",
-
-    # 23. Singham (Bajirao Singham)
-    "Aata maajhi satakli bolne se dossier aage nahi badhega. Moscow apne hisaab se chalega. Screen off karo aur kaam dhoondo.",
-
-    # 24. Gangs of Wasseypur (Definite)
-    "Hamaar naam hai Definite, aur definite baat yeh hai ki file bilkul nahi hili. Aaj ka quota khatam, radio silence shuru.",
-
-    # 25. Sacred Games (Guruji)
-    "Aham Brahmasmi... par Moscow ka portal alag hi maya mein phansa hua hai. Kripya dhyan lagayein aur refresh karna chhod dein.",
-
-    # 26. Lagaan (Bhuvan)
-    "Dugna lagaan nahi maang raha Moscow, bas dugna time le raha hai! Dossier static hai, field pe jao aur kaam pe dhyan do.",
-
-    # 27. PK (PK)
-    "Lul ho gaya! Moscow portal pe lagta hai koi wrong number lag gaya hai. Status hil hi nahi raha. Phone jeb mein daalo bhaiya.",
-
-    # 28. Baahubali (Katappa)
-    "Maine status nahi badla... kyunki Moscow ne hi nahi badla! Telemetry freeze hai, talwaar aur phone dono aaram se rakh do.",
-
-    # 29. Mirzapur (Munna Bhaiya)
-    "Hum karte hain prabandh... par babu log file ko chhoo bhi nahi rahe. Aukaat mein reh ke phone pocket mein rakho, zero delta hai.",
-
-    # 30. Hera Pheri (Baburao - Part 2)
-    "Khopdi tod saale ka... arey Russian server ka nahi re, apna dimaag thanda rakh. Status same hai, mute pe ja raha hoon."
+    # Epic Cinema & Drama
+    "Succession (Logan Roy): 'You are not serious people if you think Moscow moves on your schedule. Go do some real work.'",
+    "The Lord of the Rings (Gandalf): 'You shall not pass... to Stage 2 yet. The Ministry stands firm. Pocket the phone.'",
+    "Star Wars (Yoda): 'Patience you must have, young padawan. Move today, the portal does not.'",
+    "Gladiator (Maximus): 'Are you not entertained? Well, too bad, because the Ministry gave us zero entertainment today.'",
+    "Forrest Gump (Forrest): 'Life is like a box of chocolates. Except this portal—you already know what you're getting: nothing.'"
 ]
 
 # ==============================================================================
-# STAGE ADVANCEMENT DIALOGUES (Triggered on Status Changes)
+# J.A.R.V.I.S. TACTICAL ADVANCEMENT PROTOCOLS (Triggered on Status Changes)
 # ==============================================================================
 STAGE_CHANGE_QUOTES = {
     "Stage 2: Consideration of application": [
-        "Pardon the intrusion, sir. The Ministry has finally dusted off your dossier. Active consideration has officially commenced.",
-        "Movement detected. The bureaucrats in Moscow have actually opened your file. Mark this date on the calendar.",
-        "Alert: The database in Moscow has awoken. Your application is officially under review."
+        "Good morning, sir. Telemetry confirms movement. The Ministry has unsealed your dossier; active consideration protocols are now engaged.",
+        "Pardon the intrusion, sir. The initial bureaucratic perimeter has cleared. Your file is officially under primary evaluation in Moscow.",
+        "Alert: Ministry servers report an active state transition. Stage 2 confirmed—your application is now in the hands of the review committee."
     ],
     "Stage 3: Distribution": [
-        "Sensors detect major advancement: Stage 3 Distribution protocol engaged. Russian universities are now reviewing your dossier for placement.",
-        "Attention: We have reached Distribution. The Ministry is allocating your university seat. I suggest preparing for Russian winters, sir.",
-        "Stage 3 achieved. Suit up. You've officially bypassed the preliminary filter."
+        "Sensors detect a critical advancement: Stage 3 Distribution protocol engaged. Your dossier is now being transmitted to university faculties for quota allocation.",
+        "Attention, sir: We have reached Distribution. The Ministry has approved your profile and is actively assigning your academic seat. Prepare for deployment.",
+        "Major milestone confirmed. Stage 3 online. The candidate evaluation phase is complete; university assignment protocols are underway."
     ],
     "Stage 4: Verification": [
-        "Final perimeter reached: Stage 4 Verification. The Ministry is running final administrative sign-offs. We are at the endgame.",
-        "Stage 4 protocol online. Final security and paperwork checks in progress. Almost across the finish line, sir."
+        "Final administrative perimeter reached: Stage 4 Verification. Universities are validating academic documents and initiating clearance protocols.",
+        "Stage 4 detected, sir. Security, credential verification, and administrative sign-offs are in progress. We are approaching the endgame.",
+        "Uplink registers Stage 4 status. Department heads are conducting final dossier verification. The finish line is within operational range."
+    ],
+    "Stage 5: Waiting for confirmation / Placement": [
+        "Priority alert, sir. University allocation has been formulated. Institutional confirmation protocol is currently pending final registry signature.",
+        "Dossier status updated: University placement confirmed by faculty. Awaiting formal Ministry registry issuance.",
+        "Sensors indicate Stage 5 clearance. The academic seat has been reserved. Awaiting the decree."
+    ],
+    "Stage 6: Enrolled": [
+        "Protocol Complete. Final decree signed, sealed, and verified in the central registry. You are officially enrolled, sir. Congratulations.",
+        "All systems reporting victory: Final enrollment achieved. Pack your gear, sir; the Russian cybernetics corridor awaits.",
+        "Status: ENROLLED. Full mission objective accomplished. Welcome to the ranks."
     ]
 }
 
 DEFAULT_STAGE_CHANGE = [
     "Pardon the intrusion, sir. Telemetry registers an active state transition on the portal servers.",
-    "Sir, an unscheduled protocol update has just cleared the Ministry portal."
+    "Sir, an unscheduled protocol update has just cleared the Ministry portal. Review incoming snapshot immediately."
 ]
 
 
@@ -199,7 +166,6 @@ def normalize_text(text: str) -> str:
 
 def scrape_applicant(browser, user):
     """Scrapes one applicant with an isolated browser context and dynamic polling."""
-    # Fresh isolated context for every search (eliminates cookie/session bleed)
     context = browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     )
@@ -226,19 +192,25 @@ def scrape_applicant(browser, user):
         submit_btn.scroll_into_view_if_needed()
         submit_btn.click()
 
-        # Dynamic Polling: Check DOM every 2s up to 26s (prevents early cutoff if Russian server is slow)
+        # Dynamic Polling: Check DOM every 2s up to 26s
         for _ in range(13):
             page.wait_for_timeout(2000)
             norm_body = normalize_text(page.locator("body").inner_text())
 
-            if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
-                matched_status = "Stage 2: Consideration of application"
+            if re.search(r'(enrolled|зачислен|приказ о зачислении)', norm_body):
+                matched_status = "Stage 6: Enrolled"
+                break
+            elif re.search(r'(waiting for confirmation|направлен|ожидание подтверждения)', norm_body):
+                matched_status = "Stage 5: Waiting for confirmation / Placement"
+                break
+            elif re.search(r'(verification|проверк)', norm_body):
+                matched_status = "Stage 4: Verification"
                 break
             elif re.search(r'(distribution|распределени)', norm_body):
                 matched_status = "Stage 3: Distribution"
                 break
-            elif re.search(r'(verification|проверк)', norm_body):
-                matched_status = "Stage 4: Verification"
+            elif re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
+                matched_status = "Stage 2: Consideration of application"
                 break
             elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
                 matched_status = "Stage 1: Entering the questionnaire"
@@ -266,14 +238,14 @@ def execute_check():
             for index, user in enumerate(APPLICANTS):
                 print(f"=== Scraping for {user['name']} ({user['reg_number']}) ===")
 
-                # 10s cooldown before Imran so the portal doesn't throttle consecutive requests
+                # 10s cooldown between checks to prevent Russian server throttling
                 if index > 0:
                     time.sleep(10)
 
                 # Attempt 1
                 current_status, screenshot_file = scrape_applicant(browser, user)
 
-                # Auto-retry once if status missed due to transient network lag
+                # Auto-retry once if status missed due to transient lag
                 if not current_status:
                     print(f"⚠️ Initial query missed for {user['name']}. Retrying in 8 seconds...")
                     time.sleep(8)
@@ -292,7 +264,7 @@ def execute_check():
                             if len(lines) >= 2:
                                 last_recap_date = lines[1]
 
-                    # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
+                    # Case 1: Status changed -> Priority J.A.R.V.I.S. Alert + Screenshot
                     if current_status != old_status:
                         with open(user["state_file"], "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
@@ -312,7 +284,7 @@ def execute_check():
                         send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
                         print(f"Priority alert dispatched to {user['name']}.")
 
-                    # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
+                    # Case 2: First run of the day -> TV/Movie quote briefing
                     elif today_pkt != last_recap_date:
                         with open(user["state_file"], "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
