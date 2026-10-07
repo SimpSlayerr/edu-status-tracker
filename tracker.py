@@ -34,54 +34,39 @@ APPLICANTS = [
 ]
 
 # ==============================================================================
-# 30 ICONIC MOVIE & TV SERIES BRIEFINGS (When stuck on Stage 1 / Unchanged Status)
+# 30 PURE RAW QUOTES (Zero character names, zero show titles)
 # ==============================================================================
 DAILY_QUOTES = [
-    # The Office
-    "The Office (Michael Scott): 'Well, well, well, how the turntables... haven't turned at all. Not even a single degree. Zero updates today.'",
-    "The Office (Stanley Hudson): 'It's called waiting, and it's what we do. Did I stutter? Status is unchanged. Back to work.'",
-    "The Office (Jim Halpert): '*Looks directly into the camera in exhausted silence.* Status: still Stage 1.'",
-
-    # Breaking Bad & Better Call Saul
-    "Breaking Bad (Mike Ehrmantraut): 'Here's what's gonna happen: You're gonna put the phone down, you're not gonna touch the browser, and you're gonna go about your day. Zero delta.'",
-    "Breaking Bad (Walter White): 'I am the one who... waits. Say my name? Still Stage 1 on the registry.'",
-    "Better Call Saul (Saul Goodman): 'Did you know you have rights? The Constitution says you do. But Moscow's portal doesn't care. Nothing changed.'",
-
-    # Game of Thrones
-    "Game of Thrones (Tyrion Lannister): 'That's what I do: I drink, and I know things. And today, I know Moscow hasn't touched your file.'",
-    "Game of Thrones (Ned Stark): 'Brace yourselves... winter is coming, but this status update is not. Telemetry completely static.'",
-    "Game of Thrones (Bran Stark): 'Why do you think I came all this way? Certainly not to watch an empty database. Screen off.'",
-
-    # Sci-Fi & Mind-Benders
-    "Interstellar (Cooper): 'This little maneuver is going to cost us 51 years. Another day, another zero on the portal.'",
-    "The Matrix (Morpheus): 'I can only show you the door. You're the one who has to wait outside until Moscow decides to unlock it.'",
-    "Inception (Cobb): 'You're waiting for a train. A train that will take you far away. But right now? That train hasn't left the station.'",
-
-    # Gotham & Comic Book
-    "The Dark Knight (The Joker): 'Why so serious? It's just an unchanged Russian portal. Put a smile on that face and close Telegram.'",
-    "The Dark Knight (Alfred): 'Some men just want to watch the world burn. Others just want Moscow to click one button. Today is not that day.'",
-    "Avengers: Endgame (Thanos): 'I am inevitable. But this Russian portal? Completely immovable. Zero change detected.'",
-
-    # Crime & Cult Classics
-    "Pulp Fiction (Jules Winnfield): 'Say \"refresh\" again. Say \"refresh\" again, I dare you, I double dare you! Status unchanged.'",
-    "Fight Club (Tyler Durden): 'The things you own end up owning you—like this status tracker. Let it go. Zero movement detected.'",
-    "Peaky Blinders (Tommy Shelby): 'By order of the Peaky Blinders... do not check this damn portal until tomorrow. Stand down.'",
-    "The Godfather (Don Corleone): 'I made them an application they couldn't refuse... yet here we are, still waiting. Respect the timeline.'",
-    "The Big Lebowski (The Dude): 'Yeah, well, you know, that's just, like, the database's opinion, man. Abide the wait.'",
-
-    # Sitcoms & Comedy
-    "Friends (Chandler Bing): 'Could this portal BE any slower? Absolutely nothing changed today.'",
-    "Brooklyn Nine-Nine (Captain Holt): 'Status update: Bone-dry. Zero movement detected. As predictable as it is devastating. Dismissed.'",
-    "Parks and Recreation (Ron Swanson): 'Give me all the bacon and eggs you have. Because you're getting zero status updates from Russia today.'",
-    "Silicon Valley (Gilfoyle): 'I automated this script because human patience is inefficient. The status didn't move. Go away.'",
-    "Shrek (Donkey): '\"Are we there yet?\" No. \"Are we there yet?\" Still no. Stage 1 locked in.'",
-
-    # Epic Cinema & Drama
-    "Succession (Logan Roy): 'You are not serious people if you think Moscow moves on your schedule. Go do some real work.'",
-    "The Lord of the Rings (Gandalf): 'You shall not pass... to Stage 2 yet. The Ministry stands firm. Pocket the phone.'",
-    "Star Wars (Yoda): 'Patience you must have, young padawan. Move today, the portal does not.'",
-    "Gladiator (Maximus): 'Are you not entertained? Well, too bad, because the Ministry gave us zero entertainment today.'",
-    "Forrest Gump (Forrest): 'Life is like a box of chocolates. Except this portal—you already know what you're getting: nothing.'"
+    "Well, well, well, how the turntables... haven't turned at all. Not even a single degree. Zero updates today.",
+    "Did I stutter? Status is unchanged. Back to work.",
+    "Here's what's gonna happen: You're gonna put the phone down, leave the browser alone, and go about your day. Zero delta.",
+    "Say my name? Still Stage 1 on the registry.",
+    "Did you know you have rights? The Constitution says you do. But Moscow's portal doesn't care. Nothing changed.",
+    "That's what I do: I drink, and I know things. And today, I know Moscow hasn't touched your file.",
+    "Winter is coming, but this status update is not. Telemetry completely static.",
+    "Why do you think I came all this way? Certainly not to watch an empty database. Screen off.",
+    "This little maneuver is going to cost us 51 years. Another day, another zero on the portal.",
+    "I can only show you the door. You have to wait outside until Moscow decides to unlock it.",
+    "You're waiting for a train that hasn't even left the station yet. Put the phone down.",
+    "Why so serious? It's just an unchanged Russian portal. Put a smile on that face and close Telegram.",
+    "Some men just want to watch the world burn. Others just want Moscow to click one button. Today is not that day.",
+    "I am inevitable. But this Russian portal? Completely immovable. Zero change detected.",
+    "Say 'refresh' again. Say 'refresh' again, I dare you, I double dare you! Status unchanged.",
+    "The things you own end up owning you—like this status tracker. Let it go. Zero movement detected.",
+    "By order of the Peaky Blinders... do not check this damn portal until tomorrow. Stand down.",
+    "I made them an application they couldn't refuse... yet here we are, still waiting. Respect the timeline.",
+    "Yeah, well, that's just, like, the database's opinion, man. Abide the wait.",
+    "Could this portal BE any slower? Absolutely nothing changed today.",
+    "Status update: Bone-dry. Zero movement detected. As predictable as it is devastating. Dismissed.",
+    "Give me all the bacon and eggs you have. Because you're getting zero status updates from Russia today.",
+    "I automated this script because human patience is inefficient. The status didn't move. Go away.",
+    "Are we there yet? No. Are we there yet? Still no. Stage 1 locked in.",
+    "You are not serious people if you think Moscow moves on your schedule. Go do some real work.",
+    "You shall not pass to Stage 2 yet. The Ministry stands firm. Pocket the phone.",
+    "Patience you must have. Move today, the portal does not.",
+    "Are you not entertained? Too bad, because the Ministry gave us zero entertainment today.",
+    "Life is like a box of chocolates. Except this portal—you already know what you're getting: nothing.",
+    "Houston, we have a problem: absolutely nothing is happening on this server."
 ]
 
 # ==============================================================================
@@ -284,7 +269,7 @@ def execute_check():
                         send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
                         print(f"Priority alert dispatched to {user['name']}.")
 
-                    # Case 2: First run of the day -> TV/Movie quote briefing
+                    # Case 2: First run of the day -> Clean Raw Quote Briefing
                     elif today_pkt != last_recap_date:
                         with open(user["state_file"], "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
