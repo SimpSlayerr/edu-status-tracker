@@ -70,39 +70,28 @@ DAILY_QUOTES = [
 ]
 
 # ==============================================================================
-# J.A.R.V.I.S. TACTICAL ADVANCEMENT PROTOCOLS (Triggered on Status Changes)
+# STAGE ADVANCEMENT DIALOGUES (Triggered on Status Changes)
 # ==============================================================================
 STAGE_CHANGE_QUOTES = {
     "Stage 2: Consideration of application": [
-        "Good morning, sir. Telemetry confirms movement. The Ministry has unsealed your dossier; active consideration protocols are now engaged.",
-        "Pardon the intrusion, sir. The initial bureaucratic perimeter has cleared. Your file is officially under primary evaluation in Moscow.",
-        "Alert: Ministry servers report an active state transition. Stage 2 confirmed—your application is now in the hands of the review committee."
+        "Pardon the intrusion, sir. The Ministry has finally dusted off your dossier. Active consideration has officially commenced.",
+        "Movement detected. The bureaucrats in Moscow have actually opened your file. Mark this date on the calendar.",
+        "Alert: The database in Moscow has awoken. Your application is officially under review."
     ],
     "Stage 3: Distribution": [
-        "Sensors detect a critical advancement: Stage 3 Distribution protocol engaged. Your dossier is now being transmitted to university faculties for quota allocation.",
-        "Attention, sir: We have reached Distribution. The Ministry has approved your profile and is actively assigning your academic seat. Prepare for deployment.",
-        "Major milestone confirmed. Stage 3 online. The candidate evaluation phase is complete; university assignment protocols are underway."
+        "Sensors detect major advancement: Stage 3 Distribution protocol engaged. Russian universities are now reviewing your dossier for placement.",
+        "Attention: We have reached Distribution. The Ministry is allocating your university seat. I suggest preparing for Russian winters, sir.",
+        "Stage 3 achieved. Suit up. You've officially bypassed the preliminary filter."
     ],
     "Stage 4: Verification": [
-        "Final administrative perimeter reached: Stage 4 Verification. Universities are validating academic documents and initiating clearance protocols.",
-        "Stage 4 detected, sir. Security, credential verification, and administrative sign-offs are in progress. We are approaching the endgame.",
-        "Uplink registers Stage 4 status. Department heads are conducting final dossier verification. The finish line is within operational range."
-    ],
-    "Stage 5: Waiting for confirmation / Placement": [
-        "Priority alert, sir. University allocation has been formulated. Institutional confirmation protocol is currently pending final registry signature.",
-        "Dossier status updated: University placement confirmed by faculty. Awaiting formal Ministry registry issuance.",
-        "Sensors indicate Stage 5 clearance. The academic seat has been reserved. Awaiting the decree."
-    ],
-    "Stage 6: Enrolled": [
-        "Protocol Complete. Final decree signed, sealed, and verified in the central registry. You are officially enrolled, sir. Congratulations.",
-        "All systems reporting victory: Final enrollment achieved. Pack your gear, sir; the Russian cybernetics corridor awaits.",
-        "Status: ENROLLED. Full mission objective accomplished. Welcome to the ranks."
+        "Final perimeter reached: Stage 4 Verification. The Ministry is running final administrative sign-offs. We are at the endgame.",
+        "Stage 4 protocol online. Final security and paperwork checks in progress. Almost across the finish line, sir."
     ]
 }
 
 DEFAULT_STAGE_CHANGE = [
     "Pardon the intrusion, sir. Telemetry registers an active state transition on the portal servers.",
-    "Sir, an unscheduled protocol update has just cleared the Ministry portal. Review incoming snapshot immediately."
+    "Sir, an unscheduled protocol update has just cleared the Ministry portal."
 ]
 
 
@@ -151,6 +140,7 @@ def normalize_text(text: str) -> str:
 
 def scrape_applicant(browser, user):
     """Scrapes one applicant with an isolated browser context and dynamic polling."""
+    # Fresh isolated context for every search (eliminates cookie/session bleed)
     context = browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     )
@@ -177,25 +167,19 @@ def scrape_applicant(browser, user):
         submit_btn.scroll_into_view_if_needed()
         submit_btn.click()
 
-        # Dynamic Polling: Check DOM every 2s up to 26s
+        # Dynamic Polling: Check DOM every 2s up to 26s (prevents early cutoff if Russian server is slow)
         for _ in range(13):
             page.wait_for_timeout(2000)
             norm_body = normalize_text(page.locator("body").inner_text())
 
-            if re.search(r'(enrolled|зачислен|приказ о зачислении)', norm_body):
-                matched_status = "Stage 6: Enrolled"
-                break
-            elif re.search(r'(waiting for confirmation|направлен|ожидание подтверждения)', norm_body):
-                matched_status = "Stage 5: Waiting for confirmation / Placement"
-                break
-            elif re.search(r'(verification|проверк)', norm_body):
-                matched_status = "Stage 4: Verification"
+            if re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
+                matched_status = "Stage 2: Consideration of application"
                 break
             elif re.search(r'(distribution|распределени)', norm_body):
                 matched_status = "Stage 3: Distribution"
                 break
-            elif re.search(r'(consideration of application|рассмотрение заявк|рассмотрение заявлен|на рассмотрении)', norm_body):
-                matched_status = "Stage 2: Consideration of application"
+            elif re.search(r'(verification|проверк)', norm_body):
+                matched_status = "Stage 4: Verification"
                 break
             elif re.search(r'(questionnaire|ввод анкет|анкет|заполнение|черновик)', norm_body):
                 matched_status = "Stage 1: Entering the questionnaire"
@@ -223,14 +207,14 @@ def execute_check():
             for index, user in enumerate(APPLICANTS):
                 print(f"=== Scraping for {user['name']} ({user['reg_number']}) ===")
 
-                # 10s cooldown between checks to prevent Russian server throttling
+                # 10s cooldown before Imran so the portal doesn't throttle consecutive requests
                 if index > 0:
                     time.sleep(10)
 
                 # Attempt 1
                 current_status, screenshot_file = scrape_applicant(browser, user)
 
-                # Auto-retry once if status missed due to transient lag
+                # Auto-retry once if status missed due to transient network lag
                 if not current_status:
                     print(f"⚠️ Initial query missed for {user['name']}. Retrying in 8 seconds...")
                     time.sleep(8)
@@ -249,7 +233,7 @@ def execute_check():
                             if len(lines) >= 2:
                                 last_recap_date = lines[1]
 
-                    # Case 1: Status changed -> Priority J.A.R.V.I.S. Alert + Screenshot
+                    # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
                     if current_status != old_status:
                         with open(user["state_file"], "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
@@ -269,7 +253,7 @@ def execute_check():
                         send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
                         print(f"Priority alert dispatched to {user['name']}.")
 
-                    # Case 2: First run of the day -> Clean Raw Quote Briefing
+                    # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
                     elif today_pkt != last_recap_date:
                         with open(user["state_file"], "w", encoding="utf-8") as f:
                             f.write(f"{current_status}\n{today_pkt}\n")
