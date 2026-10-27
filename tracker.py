@@ -14,7 +14,7 @@ PORTAL_URL = "https://russia-edu.minobrnauki.gov.ru"
 PKT = timezone(timedelta(hours=5))
 
 # ==============================================================================
-# ROSTER: Yours pulls from Secrets; Imran is hardcoded
+# ROSTER: Ongoing tracking for Ahmed; Imran retires after tomorrow's first run
 # ==============================================================================
 APPLICANTS = [
     {
@@ -29,7 +29,8 @@ APPLICANTS = [
         "reg_number": "PAK-0162/26",
         "email": "imrannoshadkhan@gmail.com",
         "chat_id": "6846499897",
-        "state_file": "status_imran.txt"
+        "state_file": "status_imran.txt",
+        "retire_after_next_briefing": True  # Sends farewell on next new-day run, then terminates
     }
 ]
 
@@ -94,6 +95,17 @@ DEFAULT_STAGE_CHANGE = [
     "Sir, an unscheduled protocol update has just cleared the Ministry portal."
 ]
 
+# ==============================================================================
+# FINAL FAREWELL DIALOGUE (Circuit / Munna Bhai)
+# ==============================================================================
+FAREWELL_MESSAGE = (
+    "🛑 *CIRCUIT REPORTING: SHUTDOWN COMPLETE*\n\n"
+    "\"_Bhai ne bola bot band karne ka toh band karne ka._\n\n"
+    "_Imran bhai, tension nahi lene ka re mamu. Ab kal subah se carrom ramwanu, juice peewanu, majja ni life! "
+    "Pura system server se logout maar diya hai._\n\n"
+    "_Mast jadoo ki jhappi lo aur aaram se so jao!_\""
+)
+
 
 def send_alert(message: str, target_chat_id: str):
     if not BOT_TOKEN or not target_chat_id:
@@ -140,7 +152,6 @@ def normalize_text(text: str) -> str:
 
 def scrape_applicant(browser, user):
     """Scrapes one applicant with an isolated browser context and dynamic polling."""
-    # Fresh isolated context for every search (eliminates cookie/session bleed)
     context = browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     )
@@ -167,7 +178,7 @@ def scrape_applicant(browser, user):
         submit_btn.scroll_into_view_if_needed()
         submit_btn.click()
 
-        # Dynamic Polling: Check DOM every 2s up to 26s (prevents early cutoff if Russian server is slow)
+        # Dynamic Polling: Check DOM every 2s up to 26s
         for _ in range(13):
             page.wait_for_timeout(2000)
             norm_body = normalize_text(page.locator("body").inner_text())
@@ -205,16 +216,26 @@ def execute_check():
 
         try:
             for index, user in enumerate(APPLICANTS):
+                state_file = user["state_file"]
+
+                # If applicant has been retired in previous runs, bypass entirely
+                if os.path.exists(state_file):
+                    with open(state_file, "r", encoding="utf-8") as f:
+                        lines = [l.strip() for l in f if l.strip()]
+                        if len(lines) >= 3 and lines[2] == "RETIRED":
+                            print(f"⏩ Tracking deactivated for {user['name']} (RETIRED). Skipping entirely.")
+                            continue
+
                 print(f"=== Scraping for {user['name']} ({user['reg_number']}) ===")
 
-                # 10s cooldown before Imran so the portal doesn't throttle consecutive requests
+                # Cooldown before consecutive scraping attempts
                 if index > 0:
                     time.sleep(10)
 
                 # Attempt 1
                 current_status, screenshot_file = scrape_applicant(browser, user)
 
-                # Auto-retry once if status missed due to transient network lag
+                # Auto-retry once if status missed due to network lag
                 if not current_status:
                     print(f"⚠️ Initial query missed for {user['name']}. Retrying in 8 seconds...")
                     time.sleep(8)
@@ -225,18 +246,21 @@ def execute_check():
 
                     old_status = ""
                     last_recap_date = ""
-                    if os.path.exists(user["state_file"]):
-                        with open(user["state_file"], "r", encoding="utf-8") as f:
+                    if os.path.exists(state_file):
+                        with open(state_file, "r", encoding="utf-8") as f:
                             lines = [l.strip() for l in f if l.strip()]
                             if len(lines) >= 1:
                                 old_status = lines[0]
                             if len(lines) >= 2:
                                 last_recap_date = lines[1]
 
-                    # Case 1: Status changed -> Priority Alert + Screenshot to THAT user
+                    is_retiring = user.get("retire_after_next_briefing", False)
+
+                    # Case 1: Status changed -> Priority Alert + Screenshot
                     if current_status != old_status:
-                        with open(user["state_file"], "w", encoding="utf-8") as f:
-                            f.write(f"{current_status}\n{today_pkt}\n")
+                        retire_flag = "\nRETIRED\n" if is_retiring else "\n"
+                        with open(state_file, "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}{retire_flag}")
 
                         quote_pool = STAGE_CHANGE_QUOTES.get(current_status, DEFAULT_STAGE_CHANGE)
                         stage_dialogue = random.choice(quote_pool)
@@ -249,20 +273,29 @@ def execute_check():
                             f"🚀 *Active Protocol:* *{current_status}*\n\n"
                             f"🔗 [Direct Portal Uplink]({PORTAL_URL})"
                         )
+
+                        if is_retiring:
+                            msg += f"\n\n{FAREWELL_MESSAGE}"
+
                         send_alert(msg, user["chat_id"])
                         send_photo(screenshot_file, f"Protocol shifted: {current_status}", user["chat_id"])
-                        print(f"Priority alert dispatched to {user['name']}.")
+                        print(f"Priority alert dispatched to {user['name']}{' (FINAL - RETIRED)' if is_retiring else ''}.")
 
-                    # Case 2: First run of the calendar day -> Ultra-compact briefing to THAT user
+                    # Case 2: First run of calendar day -> Briefing or Standalone Farewell
                     elif today_pkt != last_recap_date:
-                        with open(user["state_file"], "w", encoding="utf-8") as f:
-                            f.write(f"{current_status}\n{today_pkt}\n")
+                        retire_flag = "\nRETIRED\n" if is_retiring else "\n"
+                        with open(state_file, "w", encoding="utf-8") as f:
+                            f.write(f"{current_status}\n{today_pkt}{retire_flag}")
 
-                        quote = random.choice(DAILY_QUOTES)
-                        recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
+                        # If retiring and status unchanged, send ONLY the farewell dialogue
+                        if is_retiring:
+                            recap_msg = FAREWELL_MESSAGE
+                        else:
+                            quote = random.choice(DAILY_QUOTES)
+                            recap_msg = f"📊 *{current_status}* (Unchanged)\n\n_{quote}_"
 
                         send_alert(recap_msg, user["chat_id"])
-                        print(f"Daily briefing dispatched to {user['name']}.")
+                        print(f"Daily briefing dispatched to {user['name']}{' (FINAL - RETIRED)' if is_retiring else ''}.")
 
                     # Case 3: Subsequent runs today with unchanged status -> Silent
                     else:
